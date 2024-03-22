@@ -6,7 +6,10 @@ from langchain.llms import LlamaCpp
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory
+
 from langchain.document_loaders import PyPDFLoader
+from langchain.document_loaders.csv_loader import CSVLoader
+
 import os
 import tempfile
 
@@ -18,10 +21,10 @@ def initialize_session_state():
         st.session_state['history'] = []
 
     if 'generated' not in st.session_state:
-        st.session_state['generated'] = ["Hello! Ask me anything about 🤗"]
+        st.session_state['generated'] = ["Hello! Ask me anything regarding the data (CSV/PDF files) you have uploaded🤗"]
 
     if 'past' not in st.session_state:
-        st.session_state['past'] = ["Hey! 👋"]
+        st.session_state['past'] = ["Hello! 👋"]
 
 def conversation_chat(query, chain, history):
     result = chain({"question": query, "chat_history": history})
@@ -34,7 +37,7 @@ def display_chat_history(chain):
 
     with container:
         with st.form(key='my_form', clear_on_submit=True):
-            user_input = st.text_input("Question:", placeholder="Ask about your PDF", key='input')
+            user_input = st.text_input("Question:", placeholder="Ask about your CSV/PDF Data", key='input')
             submit_button = st.form_submit_button(label='Send')
 
         if submit_button and user_input:
@@ -54,7 +57,7 @@ def create_conversational_chain(vector_store):
     # Create llm
     llm = LlamaCpp(
     streaming = True,
-    model_path="mistral-7b-instruct-v0.1.Q4_K_M.gguf",
+    model_path="model/mistral-7b-instruct-v0.1.Q4_K_M.gguf",
     temperature=0.75,
     top_p=1, 
     verbose=True,
@@ -71,7 +74,8 @@ def create_conversational_chain(vector_store):
 def main():
     # Initialize session state
     initialize_session_state()
-    st.title("Multi-PDF ChatBot using Mistral-7B-Instruct :books:")
+    st.title("A ChatBot using Mistral-7B-Instruct for chatting with CSV/PDF files :books:")
+    st.subheader("Powered by CLSS")
     # Initialize Streamlit
     st.sidebar.title("Document Processing")
     uploaded_files = st.sidebar.file_uploader("Upload files", accept_multiple_files=True)
@@ -88,6 +92,9 @@ def main():
             loader = None
             if file_extension == ".pdf":
                 loader = PyPDFLoader(temp_file_path)
+                
+            if file_extension == ".csv":
+                loader = CSVLoader(temp_file_path, encoding="utf-8", csv_args={'delimiter': ','})
 
             if loader:
                 text.extend(loader.load())
@@ -98,10 +105,11 @@ def main():
 
         # Create embeddings
         embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2", 
-                                           model_kwargs={'device': 'cpu'})
+                                           model_kwargs={'device': 'opengl'})
 
         # Create vector store
         vector_store = FAISS.from_documents(text_chunks, embedding=embeddings)
+        #vector_store.save_local("vectorstore/FAISS-db")
 
         # Create the chain object
         chain = create_conversational_chain(vector_store)
