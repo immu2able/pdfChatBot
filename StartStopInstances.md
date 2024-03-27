@@ -31,4 +31,4 @@
 
 ## Stop the EC2 Instance
 1. Login to the AWS Console as Bedrock user and select EC2.
-2. Start the instance named `my-llm-lc-vm-0-nvidia-gpu`
+2. Stop the instance named `my-llm-lc-vm-0-nvidia-gpu`
