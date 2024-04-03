@@ -9,7 +9,7 @@
    ```
 6. Activate the python virtualenv by the following command
    ```bash
-   $ source \env\bin\activate
+   $ source \env\Scripts\activate
    ```
    Post the the command prompt would change as shown below:
    ```bash
